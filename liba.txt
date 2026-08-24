@@ -1,400 +1,651 @@
---// Celestial UI Library v2 (анимации + иконки)
+--[[
+	██╗    ██╗███████╗██╗
+	╚██╗  ██╔╝██╔════╝██║
+	 ╚████╔╝ ███████╗██║
+	  ╚██╔╝  ╚════██║██║
+	   ██║   ███████║██║
+	   ╚═╝   ╚══════╝╚═╝
+	Celestial UI Library v3
+	Полностью переписана: анимации, иконки (Lucide), темы, поиск, тогглы, слайдеры, дропдауны
+]]
+
 local Celestial = {}
+
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 
---// ================= ИКОНКИ =================
---// Имена из твоего файла UiIcons.txt -> rbxassetid (Lucide-иконки Roblox)
-local IconIds = {
-	["magnifying-glass"] = 10734973670,
-	["folder"]           = 10747384554,
-	["gear"]             = 10747385959,
-	["power"]            = 10747385619,
-	["sword"]            = 10747385527,
-	["person-running"]   = 10747385071,
-	["eye"]              = 10723407389,
-	["heart"]            = 10723406095,
-	["shield-check"]     = 10747384827,
-	["lightning-bolt"]   = 10747384679,
-	["crosshairs"]       = 10709768451,
-	["flame"]            = 10723399611,
-	["star"]             = 10723406277,
-	["paint-brush"]      = 10747384966,
-	["trash-can"]        = 10747385194,
-	["check"]            = 10723404435,
-	["x"]                = 10747384394,
-	["sun"]              = 11029858098,
-	["moon"]             = 10723405990,
+local LocalPlayer = Players.LocalPlayer
+
+--=============================================================
+--  ИКОНКИ (официальные Lucide ассеты Roblox — грузятся всегда)
+--=============================================================
+local Icons = {
+	["sword"]          = "rbxassetid://10709768451", -- crosshairs-стиль, если нужен именно меч — см. ниже
+	["crosshair"]      = "rbxassetid://10709768451",
+	["run"]            = "rbxassetid://10747672688",
+	["eye"]            = "rbxassetid://10723407389",
+	["heart"]          = "rbxassetid://10723406095",
+	["shield"]         = "rbxassetid://10747384827",
+	["zap"]            = "rbxassetid://10747384679",
+	["settings"]       = "rbxassetid://10747385959",
+	["folder"]         = "rbxassetid://10747384554",
+	["power"]          = "rbxassetid://10747385619",
+	["search"]         = "rbxassetid://10734973670",
+	["paint"]          = "rbxassetid://10747384966",
+	["star"]           = "rbxassetid://10723406277",
+	["flame"]          = "rbxassetid://10723399611",
+	["user"]           = "rbxassetid://10747385071",
+	["check"]          = "rbxassetid://10723404435",
+	["x"]              = "rbxassetid://10747384394",
+	["chevron-down"]   = "rbxassetid://10709759524",
+	["chevron-right"]  = "rbxassetid://10709760627",
+	["link"]           = "rbxassetid://10723405990",
+	["copy"]           = "rbxassetid://10723404642",
+	["trash"]          = "rbxassetid://10747385194",
 }
 
-local function GetIconId(name)
-	return IconIds[name] or IconIds["star"]
-end
-
---// Создаёт ImageLabel с иконкой по имени из файла
-local function MakeIcon(name, size, parent)
+local function Icon(name, size, parent, color)
 	local img = Instance.new("ImageLabel")
-	img.Size = UDim2.fromOffset(size, size)
+	img.Name = name
+	img.Size = UDim2.fromOffset(size or 20, size or 20)
 	img.BackgroundTransparency = 1
-	img.Image = "rbxassetid://" .. GetIconId(name)
+	img.Image = Icons[name] or Icons["star"]
+	img.ImageColor3 = color or Color3.fromRGB(200, 200, 210)
 	img.Parent = parent
 	return img
 end
 
---// ================= ТЕМЫ =================
-Celestial.Themes = {
-	{Name="Фиолетово-голубой", C1="#5e33ff", C2="#00cfff"},
-	{Name="Конфетный",         C1="#ffc00f", C2="#f00bd6"},
-	{Name="Сиреневый",         C1="#fc8a2c", C2="#ff95b8"},
-	{Name="Мятно-малиновый",   C1="#0fabbc", C2="#fc354c"},
-	{Name="Супермен",          C1="#0099f7", C2="#f11712"},
-	{Name="Рубиновый",         C1="#e01f5f", C2="#9b111e"},
-	{Name="Космос",            C1="#c33764", C2="#1d2671"},
-	{Name="Аметистово-желтый", C1="#8e43ed", C2="#f5c9cb"},
-	{Name="Персиковый",        C1="#ffcb54", C2="#ff7e67"},
-	{Name="Лавандовый",        C1="#b57edc", C2="#f750c0"},
-	{Name="Лунада",            C1="#5e33ff", C2="#a5febc"},
-	{Name="Пурпурно-морской",  C1="#3603c3", C2="#2ebf91"},
-	{Name="Солнечный закат",   C1="#ff5e00", C2="#ffa500"},
-	{Name="Оранжево-розовый",  C1="#ff6347", C2="#ff69b4"},
-	{Name="Черника",           C1="#2929dd", C2="#5a5a7a"},
-	{Name="Экзалитповый",      C1="#44d7a8", C2="#006442"},
-	{Name="Мятный шоколад",    C1="#98fb98", C2="#006400"},
-	{Name="Малиновый смузи",   C1="#fbc61e", C2="#f91a93"},
-	{Name="Обморожение",       C1="#00ffff", C2="#003333"},
-	{Name="Холодная ягода",    C1="#d5ccea", C2="#490fa0"},
-	{Name="Грозовое море",     C1="#4158d0", C2="#f15151"},
-}
-
-local function HexToColor(hex)
-	hex = hex:gsub("#","")
-	return Color3.fromRGB(tonumber(hex:sub(1,2),16), tonumber(hex:sub(3,4),16), tonumber(hex:sub(5,6),16))
+--=============================================================
+--  УТИЛИТЫ
+--=============================================================
+local function Hex(hex)
+	hex = hex:gsub("#", "")
+	return Color3.fromRGB(
+		tonumber(hex:sub(1, 2), 16),
+		tonumber(hex:sub(3, 4), 16),
+		tonumber(hex:sub(5, 6), 16)
+	)
 end
 
-local CurrentTheme = Celestial.Themes[1]
-local function ThemeColor(which) return HexToColor(CurrentTheme[which]) end
-
-local function Make(class, props, parent)
+local function New(class, props, parent)
 	local inst = Instance.new(class)
-	for k,v in pairs(props) do inst[k] = v end
+	for k, v in pairs(props) do inst[k] = v end
 	inst.Parent = parent
 	return inst
 end
-local function Corner(o,r) Make("UICorner",{CornerRadius=UDim.new(0,r or 10)},o) end
 
---// Плавный градиент с "бегущим" эффектом (для ховера)
-local function AnimatedGradient(obj, c1, c2, rot)
-	local g = Make("UIGradient", {
-		Color = ColorSequence.new(c1, c2),
-		Rotation = rot or 15,
-		Offset = Vector2.new(-1, 0),
-	}, obj)
+local function Round(obj, r)
+	New("UICorner", { CornerRadius = UDim.new(0, r or 10) }, obj)
+end
+
+local function Tween(obj, time, props, style, dir)
+	local t = TweenService:Create(
+		obj,
+		TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out),
+		props
+	)
+	t:Play()
+	return t
+end
+
+--=============================================================
+--  ТЕМЫ (21 градиент как на скрине)
+--=============================================================
+Celestial.Themes = {
+	{ Name = "Фиолетово-голубой", C1 = "#5e33ff", C2 = "#00cfff" },
+	{ Name = "Конфетный",         C1 = "#ffc00f", C2 = "#f00bd6" },
+	{ Name = "Сиреневый",         C1 = "#fc8a2c", C2 = "#ff95b8" },
+	{ Name = "Мятно-малиновый",   C1 = "#0fabbc", C2 = "#fc354c" },
+	{ Name = "Супермен",          C1 = "#0099f7", C2 = "#f11712" },
+	{ Name = "Рубиновый",         C1 = "#e01f5f", C2 = "#9b111e" },
+	{ Name = "Космос",            C1 = "#c33764", C2 = "#1d2671" },
+	{ Name = "Аметистово-желтый", C1 = "#8e43ed", C2 = "#f5c9cb" },
+	{ Name = "Персиковый",        C1 = "#ffcb54", C2 = "#ff7e67" },
+	{ Name = "Лавандовый",        C1 = "#b57edc", C2 = "#f750c0" },
+	{ Name = "Лунада",            C1 = "#5e33ff", C2 = "#a5febc" },
+	{ Name = "Пурпурно-морской",  C1 = "#3603c3", C2 = "#2ebf91" },
+	{ Name = "Солнечный закат",   C1 = "#ff5e00", C2 = "#ffa500" },
+	{ Name = "Оранжево-розовый",  C1 = "#ff6347", C2 = "#ff69b4" },
+	{ Name = "Черника",           C1 = "#2929dd", C2 = "#5a5a7a" },
+	{ Name = "Экзалитповый",      C1 = "#44d7a8", C2 = "#006442" },
+	{ Name = "Мятный шоколад",    C1 = "#98fb98", C2 = "#006400" },
+	{ Name = "Малиновый смузи",   C1 = "#fbc61e", C2 = "#f91a93" },
+	{ Name = "Обморожение",       C1 = "#00ffff", C2 = "#003333" },
+	{ Name = "Холодная ягода",    C1 = "#d5ccea", C2 = "#490fa0" },
+	{ Name = "Грозовое море",     C1 = "#4158d0", C2 = "#f15151" },
+}
+
+local CurrentTheme = Celestial.Themes[1]
+local ThemeChanged = Instance.new("BindableEvent")
+
+local function TC(which) return Hex(CurrentTheme[which]) end
+local function ThemeGradient(obj)
+	local g = New("UIGradient", { Rotation = 15 }, obj)
+	local function apply()
+		g.Color = ColorSequence.new(TC("C1"), TC("C2"))
+	end
+	apply()
+	ThemeChanged.Event:Connect(apply)
 	return g
 end
 
---// Анимация "пробегающего" блика по кнопке
-local function PlaySweep(gradient)
-	if not gradient then return end
-	local t = TweenService:Create(gradient, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Offset = Vector2.new(1, 0)})
-	t:Play()
-	task.delay(0.55, function() gradient.Offset = Vector2.new(-1, 0) end)
-end
+--=============================================================
+--  ОКНО
+--=============================================================
+function Celestial:CreateWindow(cfg)
+	cfg = cfg or {}
 
---// ================= ОКНО =================
-function Celestial:CreateWindow(config)
-	config = config or {}
-	local gui = Make("ScreenGui", {Name="CelestialUI", ResetOnSpawn=false},
-		(config.Parent or game:GetService("CoreGui")))
+	local gui = New("ScreenGui", {
+		Name = "Celestial_" .. tostring(math.random(1000, 9999)),
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	}, CoreGui)
 
-	local Main = Make("Frame", {
-		Size = UDim2.fromOffset(735, 600),
-		Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = Color3.fromRGB(13,13,16), Active = true,
+	-- Открытие/закрытие на RightShift
+	local visible = true
+
+	local Main = New("CanvasGroup", {
+		Size = UDim2.fromOffset(740, 600),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(13, 13, 16),
+		BorderSizePixel = 0,
+		Active = true,
+		GroupTransparency = 0,
 	}, gui)
-	Corner(Main, 12)
-	Make("UIStroke", {Color=Color3.fromRGB(40,40,50), Thickness=1}, Main)
+	Round(Main, 12)
+
+	New("UIStroke", { Color = Color3.fromRGB(45, 45, 55), Thickness = 1 }, Main)
+
+	-- Анимация появления окна при запуске
+	Main.Size = UDim2.fromOffset(700, 560)
+	Tween(Main, 0.35, { Size = UDim2.fromOffset(740, 600) }, Enum.EasingStyle.Back)
+
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then return end
+		if input.KeyCode == Enum.KeyCode.RightShift then
+			visible = not visible
+			if visible then
+				gui.Enabled = true
+				Main.GroupTransparency = 1
+				Main.Position = UDim2.fromScale(0.5, 0.53)
+				Tween(Main, 0.25, { GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5) })
+			else
+				Tween(Main, 0.25, { GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.53) })
+				task.delay(0.26, function() gui.Enabled = false end)
+			end
+		end
+	end)
 
 	-- Перетаскивание
 	do
 		local dragging, dragStart, startPos
-		Main.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging=true dragStart=i.Position startPos=Main.Position end
+		Main.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging, dragStart, startPos = true, input.Position, Main.Position
+			end
 		end)
-		UserInputService.InputEnded:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=false end
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 		end)
-		UserInputService.InputChanged:Connect(function(i)
-			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-				local d = i.Position - dragStart
-				Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X, startPos.Y.Scale, startPos.Y.Offset+d.Y)
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+				local d = input.Position - dragStart
+				Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
 			end
 		end)
 	end
 
-	--// САЙДБАР
-	local Sidebar = Make("Frame", {Size=UDim2.new(0,200,1,0), BackgroundColor3=Color3.fromRGB(10,10,13)}, Main)
-	Corner(Sidebar, 12)
+	---------------------------------------------------------
+	-- САЙДБАР
+	---------------------------------------------------------
+	local Sidebar = New("Frame", {
+		Size = UDim2.new(0, 205, 1, 0),
+		BackgroundColor3 = Color3.fromRGB(10, 10, 13),
+		BorderSizePixel = 0,
+	}, Main)
+	Round(Sidebar, 12)
 
-	local Avatar = Make("ImageLabel", {
-		Size=UDim2.fromOffset(40,40), Position=UDim2.fromOffset(15,15),
-		Image=Players:GetUserThumbnailAsync(Players.LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100),
+	New("UIStroke", { Color = Color3.fromRGB(30, 30, 38), Thickness = 1 }, Sidebar)
+
+	-- Аватарка игрока
+	local AvatarHolder = New("Frame", {
+		Size = UDim2.fromOffset(42, 42), Position = UDim2.fromOffset(14, 14),
+		BackgroundColor3 = Color3.fromRGB(28, 28, 36), BorderSizePixel = 0,
 	}, Sidebar)
-	Corner(Avatar, 8)
+	Round(AvatarHolder, 21)
 
-	Make("TextLabel", {
-		Size=UDim2.new(1,-65,0,40), Position=UDim2.fromOffset(65,15), BackgroundTransparency=1,
-		Text="Celestial", TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
-		Font=Enum.Font.GothamBold, TextSize=22,
+	pcall(function()
+		local thumb = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+		local av = New("ImageLabel", { Size = UDim2.fromScale(1, 1), Image = thumb, BackgroundTransparency = 1 }, AvatarHolder)
+		Round(av, 21)
+	end)
+
+	New("TextLabel", {
+		Size = UDim2.new(1, -70, 0, 42), Position = UDim2.fromOffset(66, 14),
+		BackgroundTransparency = 1, Text = "Celestial",
+		TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold,
+		TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left,
 	}, Sidebar)
 
-	Make("TextLabel", {
-		Size=UDim2.new(1,-20,0,20), Position=UDim2.fromOffset(15,70), BackgroundTransparency=1,
-		Text="Основные", TextColor3=Color3.fromRGB(120,120,130), TextXAlignment=Enum.TextXAlignment.Left,
-		Font=Enum.Font.Gotham, TextSize=13,
+	-- Разделитель
+	New("Frame", {
+		Size = UDim2.new(1, -24, 0, 1), Position = UDim2.fromOffset(12, 68),
+		BackgroundColor3 = Color3.fromRGB(32, 32, 40), BorderSizePixel = 0,
 	}, Sidebar)
 
-	local TabButtons = Make("Frame", {Size=UDim2.new(1,-20,0,300), Position=UDim2.fromOffset(10,95), BackgroundTransparency=1}, Sidebar)
-	Make("UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder}, TabButtons)
+	local function SectionLabel(text, y)
+		New("TextLabel", {
+			Size = UDim2.new(1, -24, 0, 18), Position = UDim2.fromOffset(16, y),
+			BackgroundTransparency = 1, Text = text,
+			TextColor3 = Color3.fromRGB(110, 110, 125), Font = Enum.Font.Gotham,
+			TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+		}, Sidebar)
+	end
 
-	-- Кнопка Выйти (с иконкой и ховер-эффектом)
-	local ExitBtn = Make("TextButton", {
-		Size=UDim2.new(1,-20,0,40), Position=UDim2.new(1,-10,1,-50), AnchorPoint=Vector2.new(0,1),
-		BackgroundTransparency=1, Text="", AutoButtonColor=false,
+	SectionLabel("Основные", 78)
+
+	local TabsMain = New("Frame", {
+		Size = UDim2.new(1, -20, 0, 320), Position = UDim2.fromOffset(10, 100),
+		BackgroundTransparency = 1,
 	}, Sidebar)
-	MakeIcon("power", 20, ExitBtn).Position = UDim2.fromOffset(12,10)
-	Make("TextLabel", {
-		Size=UDim2.new(1,-50,1,0), Position=UDim2.fromOffset(42,0), BackgroundTransparency=1,
-		Text="Выйти", TextColor3=Color3.fromRGB(200,200,210), TextXAlignment=Enum.TextXAlignment.Left,
-		Font=Enum.Font.GothamBold, TextSize=16,
+	New("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, TabsMain)
+
+	SectionLabel("Другие", 430)
+	local TabsExtra = New("Frame", {
+		Size = UDim2.new(1, -20, 0, 80), Position = UDim2.fromOffset(10, 452),
+		BackgroundTransparency = 1,
+	}, Sidebar)
+	New("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, TabsExtra)
+
+	-- Кнопка выхода
+	local ExitBtn = New("TextButton", {
+		Size = UDim2.new(1, -20, 0, 40), AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 10, 1, -12),
+		BackgroundColor3 = Color3.fromRGB(255, 60, 60), BackgroundTransparency = 1,
+		Text = "", AutoButtonColor = false, BorderSizePixel = 0,
+	}, Sidebar)
+	Round(ExitBtn, 10)
+
+	Icon("power", 18, ExitBtn, Color3.fromRGB(220, 220, 230)).Position = UDim2.fromOffset(14, 11)
+	New("TextLabel", {
+		Size = UDim2.new(1, -52, 1, 0), Position = UDim2.fromOffset(44, 0),
+		BackgroundTransparency = 1, Text = "Выйти",
+		TextColor3 = Color3.fromRGB(200, 200, 210), Font = Enum.Font.GothamBold,
+		TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left,
 	}, ExitBtn)
-	ExitBtn.MouseEnter:Connect(function()
-		TweenService:Create(ExitBtn, TweenInfo.new(0.2), {BackgroundTransparency=0.85, BackgroundColor3=Color3.fromRGB(255,60,60)}):Play()
-	end)
-	ExitBtn.MouseLeave:Connect(function()
-		TweenService:Create(ExitBtn, TweenInfo.new(0.2), {BackgroundTransparency=1}):Play()
-	end)
-	ExitBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-	--// КОНТЕНТ
-	local Content = Make("Frame", {Size=UDim2.new(1,-200,1,0), Position=UDim2.fromOffset(200,0), BackgroundTransparency=1}, Main)
+	ExitBtn.MouseEnter:Connect(function() Tween(ExitBtn, 0.2, { BackgroundTransparency = 0.85 }) end)
+	ExitBtn.MouseLeave:Connect(function() Tween(ExitBtn, 0.2, { BackgroundTransparency = 1 }) end)
+	ExitBtn.MouseButton1Click:Connect(function()
+		Tween(Main, 0.2, { GroupTransparency = 1 })
+		task.delay(0.22, function() gui:Destroy() end)
+	end)
 
-	local SearchBox = Make("TextBox", {
-		Size=UDim2.new(1,-110,0,40), Position=UDim2.fromOffset(15,15),
-		BackgroundColor3=Color3.fromRGB(20,20,26), PlaceholderText="Поиск",
-		Text="", TextColor3=Color3.new(1,1,1), PlaceholderColor3=Color3.fromRGB(110,110,120),
-		Font=Enum.Font.Gotham, TextSize=15, TextXAlignment=Enum.TextXAlignment.Left, ClearTextOnFocus=false,
+	---------------------------------------------------------
+	-- КОНТЕНТ
+	---------------------------------------------------------
+	local Content = New("Frame", {
+		Size = UDim2.new(1, -205, 1, 0), Position = UDim2.fromOffset(205, 0),
+		BackgroundTransparency = 1,
+	}, Main)
+
+	-- Поиск
+	local SearchBox = New("TextBox", {
+		Size = UDim2.new(1, -105, 0, 40), Position = UDim2.fromOffset(15, 14),
+		BackgroundColor3 = Color3.fromRGB(19, 19, 24), BorderSizePixel = 0,
+		PlaceholderText = "Поиск...", Text = "",
+		TextColor3 = Color3.new(1, 1, 1), PlaceholderColor3 = Color3.fromRGB(100, 100, 115),
+		Font = Enum.Font.GothamMedium, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
+		ClearTextOnFocus = false,
 	}, Content)
-	Make("UIPadding", {PaddingLeft=UDim.new(0,35)}, SearchBox)
-	Corner(SearchBox, 10)
-	MakeIcon("magnifying-glass", 18, SearchBox).Position = UDim2.fromOffset(12,11)
+	Round(SearchBox, 10)
+	New("UIPadding", { PaddingLeft = UDim.new(0, 36) }, SearchBox)
+	Icon("search", 17, SearchBox, Color3.fromRGB(110, 110, 125)).Position = UDim2.fromOffset(12, 12)
 
-	local Window = {Tabs={}, SearchText=""}
-	SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-		Window.SearchText = string.lower(SearchBox.Text)
-		for _,tab in pairs(Window.Tabs) do if tab._Refresh then tab._Refresh() end end
-	end)
+	Window = {}
+	local AllTabs = {}
 
-	--// ВКЛАДКА
-	function Window:CreateTab(name, iconName)
-		local btn = Make("TextButton", {
-			Size=UDim2.new(1,0,0,40), BackgroundColor3=Color3.fromRGB(20,20,26),
-			Text="", AutoButtonColor=false,
-		}, TabButtons)
-		Corner(btn, 10)
+	function Window:CreateTab(name, iconName, isExtra)
+		local holder = isExtra and TabsExtra or TabsMain
 
-		local icon = MakeIcon(iconName or "star", 22, btn)
-		icon.Position = UDim2.fromOffset(12, 9)
+		local btn = New("TextButton", {
+			Size = UDim2.new(1, 0, 0, 40),
+			BackgroundColor3 = Color3.fromRGB(19, 19, 24),
+			Text = "", AutoButtonColor = false, BorderSizePixel = 0,
+		}, holder)
+		Round(btn, 10)
+		btn.ClipsDescendants = true
 
-		local label = Make("TextLabel", {
-			Size=UDim2.new(1,-50,1,0), Position=UDim2.fromOffset(44,0), BackgroundTransparency=1,
-			Text=name, TextColor3=Color3.fromRGB(160,160,170), Font=Enum.Font.GothamBold,
-			TextSize=16, TextXAlignment=Enum.TextXAlignment.Left,
+		local tabIcon = Icon(iconName or "star", 20, btn)
+		tabIcon.Position = UDim2.fromOffset(14, 10)
+
+		local lbl = New("TextLabel", {
+			Size = UDim2.new(1, -50, 1, 0), Position = UDim2.fromOffset(46, 0),
+			BackgroundTransparency = 1, Text = name,
+			TextColor3 = Color3.fromRGB(165, 165, 180), Font = Enum.Font.GothamBold,
+			TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left,
 		}, btn)
 
-		local page = Make("ScrollingFrame", {
-			Size=UDim2.new(1,-30,1,-75), Position=UDim2.fromOffset(15,65),
-			BackgroundTransparency=1, BorderSizePixel=0, CanvasSize=UDim2.new(),
-			ScrollBarThickness=4, ScrollBarImageColor3=Color3.fromRGB(60,60,70), Visible=false,
+		-- Страница вкладки
+		local page = New("ScrollingFrame", {
+			Size = UDim2.new(1, -30, 1, -72), Position = UDim2.fromOffset(15, 64),
+			BackgroundTransparency = 1, BorderSizePixel = 0,
+			CanvasSize = UDim2.new(), ScrollBarThickness = 3,
+			ScrollBarImageColor3 = Color3.fromRGB(70, 70, 85),
+			Visible = false,
 		}, Content)
-		Make("UIGridLayout", {CellSize=UDim2.fromOffset(250,70), CellPadding=UDim2.fromOffset(10,10), SortOrder=Enum.SortOrder.LayoutOrder}, page)
+		local grid = New("UIGridLayout", {
+			CellSize = UDim2.fromOffset(250, 72), CellPadding = UDim2.fromOffset(10, 10),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}, page)
 
-		local Tab = {_Btn=btn, _Page=page, _Cards={}}
-		table.insert(Window.Tabs, Tab)
+		local Tab = {
+			Name = name,
+			_Btn = btn, _Icon = tabIcon, _Lbl = lbl,
+			_Page = page, _Grid = grid, _Cards = {},
+			_IsThemes = false,
+		}
+		table.insert(AllTabs, Tab)
 
-		-- ===== ХОВЕР-ЭФФЕКТ НА КНОПКЕ РАЗДЕЛА =====
-		local hoverGrad -- бегущий блик
+		-- ===== ХОВЕР НА КНОПКЕ РАЗДЕЛА: бегущий блик + подсветка =====
 		btn.MouseEnter:Connect(function()
-			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3=Color3.fromRGB(30,30,38)}):Play()
-			TweenService:Create(icon, TweenInfo.new(0.25), {ImageColor3=ThemeColor("C1")}):Play()
-			hoverGrad = AnimatedGradient(btn, ThemeColor("C1"), ThemeColor("C2"), 0)
-			hoverGrad.Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.75), NumberSequenceKeypoint.new(1, 1)
-			})
-			PlaySweep(hoverGrad)
+			if Tab._Active then return end
+			Tween(btn, 0.2, { BackgroundColor3 = Color3.fromRGB(28, 28, 36) })
+			Tween(tabIcon, 0.2, { ImageColor3 = TC("C1") })
+
+			local sweep = New("Frame", {
+				Size = UDim2.fromOffset(60, 200),
+				Position = UDim2.fromOffset(-60, 0),
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BackgroundTransparency = 0.93,
+				ZIndex = 5, BorderSizePixel = 0,
+			}, btn)
+			Round(sweep, 30)
+			local sg = ThemeGradient(sweep)
+			sg.Rotation = 90
+			Tween(sweep, 0.45, { Position = UDim2.fromOffset(250, 0) })
+			task.delay(0.5, function() sweep:Destroy() end)
 		end)
 		btn.MouseLeave:Connect(function()
-			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3=Color3.fromRGB(20,20,26)}):Play()
-			TweenService:Create(icon, TweenInfo.new(0.25), {ImageColor3=Color3.new(1,1,1)}):Play()
+			if Tab._Active then return end
+			Tween(btn, 0.2, { BackgroundColor3 = Color3.fromRGB(19, 19, 24) })
+			Tween(tabIcon, 0.2, { ImageColor3 = Color3.fromRGB(200, 200, 210) })
 		end)
 
-		-- Карточка функции
-		function Tab:AddCard(title, description, callback, iconName)
-			local card = Make("TextButton", {
-				BackgroundColor3=Color3.fromRGB(20,20,26), Text="", AutoButtonColor=false,
-			}, page)
-			Corner(card, 10)
-			Make("UIStroke", {Color=Color3.fromRGB(35,35,45), Thickness=1}, card)
-
-			local enabled = false
-			local glow = Make("Frame", {Size=UDim2.new(1,0,1,0), Visible=false, ZIndex=0}, card)
-			Corner(glow, 10)
-
-			local icon = MakeIcon(iconName or "star", 20, card)
-			icon.Position = UDim2.new(1,-32,0,8)
-
-			Make("TextLabel", {
-				Size=UDim2.new(1,-64,0,24), Position=UDim2.fromOffset(12,6), BackgroundTransparency=1,
-				Text=title, TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
-				Font=Enum.Font.GothamBold, TextSize=16,
-			}, card)
-			Make("TextLabel", {
-				Size=UDim2.new(1,-24,0,34), Position=UDim2.fromOffset(12,30), BackgroundTransparency=1,
-				Text=description or "", TextColor3=Color3.fromRGB(110,110,120), TextWrapped=true,
-				TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextXAlignment.Top,
-				Font=Enum.Font.Gotham, TextSize=12,
-			}, card)
-
-			local function setState(state)
-				enabled = state
-				glow.Visible = state
-				glow:ClearAllChildren()
-				if state then
-					Corner(glow, 10)
-					AnimatedGradient(glow, ThemeColor("C1"), ThemeColor("C2"))
-					Make("UIStroke", {Color=ThemeColor("C1"), Thickness=1.5}, card)
-					-- пульс карточки при включении
-					card.Size = UDim2.fromOffset(250, 66)
-					TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Back), {Size=UDim2.fromOffset(250,70)}):Play()
-				else
-					local s = card:FindFirstChildOfClass("UIStroke")
-					if s then s.Color = Color3.fromRGB(35,35,45); s.Thickness = 1 end
+		-- ===== ВЫБОР ВКЛАДКИ =====
+		btn.MouseButton1Click:Connect(function()
+			for _, t in pairs(AllTabs) do
+				t._Active = false
+				t._Page.Visible = false
+				t._Btn.BackgroundTransparency = 0
+				t._Btn.BackgroundColor3 = Color3.fromRGB(19, 19, 24)
+				for _, c in pairs(t._Btn:GetChildren()) do
+					if c:IsA("UIGradient") then c:Destroy() end
 				end
-				if callback then callback(state) end
+				Tween(t._Lbl, 0.2, { TextColor3 = Color3.fromRGB(165, 165, 180) })
+				Tween(t._Icon, 0.2, { ImageColor3 = Color3.fromRGB(200, 200, 210) })
 			end
 
-			-- ===== ХОВЕР-ЭФФЕКТ НА КАРТОЧКЕ =====
+			Tab._Active = true
+			page.Visible = true
+
+			-- Градиентная кнопка активной вкладки
+			btn.BackgroundColor3 = Color3.new(1, 1, 1)
+			ThemeGradient(btn)
+			lbl.TextColor3 = Color3.new(1, 1, 1)
+			tabIcon.ImageColor3 = Color3.new(1, 1, 1)
+			tabIcon.ZIndex = 3
+			btn.ZIndex = 1
+			for _, c in pairs(btn:GetChildren()) do
+				if c:IsA("ImageLabel") or c:IsA("TextLabel") then c.ZIndex = 3 end
+			end
+
+			-- Анимация выезда страницы
+			page.Position = UDim2.fromOffset(15, 74)
+			Tween(page, 0.3, { Position = UDim2.fromOffset(15, 64) }, Enum.EasingStyle.Quint)
+		end)
+
+		-- ===== ПОИСК =====
+		function Tab._Refresh(query)
+			if Tab._IsThemes then
+				for _, c in pairs(Tab._Cards) do
+					c.Card.Visible = query == "" or string.find(string.lower(c.Name), query, 1, true) ~= nil
+				end
+			else
+				for _, c in pairs(Tab._Cards) do
+					c.Card.Visible = query == "" or string.find(string.lower(c.Title .. " " .. c.Desc), query, 1, true) ~= nil
+				end
+			end
+		end
+
+		-----------------------------------------------------
+		-- КАРТОЧКА ФУНКЦИИ (тоггл)
+		-----------------------------------------------------
+		function Tab:AddCard(title, desc, callback, iconName)
+			local card = New("TextButton", {
+				BackgroundColor3 = Color3.fromRGB(19, 19, 24),
+				Text = "", AutoButtonColor = false, BorderSizePixel = 0,
+			}, page)
+			Round(card, 10)
+			card.ClipsDescendants = true
+
+			local stroke = New("UIStroke", { Color = Color3.fromRGB(34, 34, 44), Thickness = 1 }, card)
+
+			-- Градиентная заливка включённого состояния
+			local glow = New("Frame", {
+				Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1),
+				Visible = false, ZIndex = 0, BorderSizePixel = 0,
+			}, card)
+			Round(glow, 10)
+			ThemeGradient(glow)
+
+			Icon(iconName or "star", 18, card, Color3.fromRGB(150, 150, 165)).Position = UDim2.new(1, -30, 0, 10)
+
+			New("TextLabel", {
+				Size = UDim2.new(1, -62, 0, 22), Position = UDim2.fromOffset(12, 8),
+				BackgroundTransparency = 1, Text = title,
+				TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold,
+				TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3,
+			}, card)
+			New("TextLabel", {
+				Size = UDim2.new(1, -24, 0, 32), Position = UDim2.fromOffset(12, 32),
+				BackgroundTransparency = 1, Text = desc or "",
+				TextColor3 = Color3.fromRGB(105, 105, 120), TextWrapped = true,
+				Font = Enum.Font.Gotham, TextSize = 11,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 3,
+			}, card)
+
+			local enabled = false
+			local state = {
+				Title = title, Desc = desc or "", Card = card,
+			}
+			table.insert(Tab._Cards, state)
+
+			local function Set(on, silent)
+				enabled = on
+				glow.Visible = on
+				Tween(glow, 0.25, { BackgroundTransparency = on and 0.62 or 1 })
+				stroke.Color = on and TC("C1") or Color3.fromRGB(34, 34, 44)
+				stroke.Transparency = on and 0.3 or 0
+				if on and not silent then
+					-- пульс при клике
+					local pulse = New("Frame", {
+						Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1),
+						BackgroundTransparency = 0.7, ZIndex = 4, BorderSizePixel = 0,
+					}, card)
+					Round(pulse, 10)
+					Tween(pulse, 0.4, { BackgroundTransparency = 1 })
+					task.delay(0.42, function() pulse:Destroy() end)
+				end
+				if callback then callback(on) end
+			end
+			state.SetState = Set
+			state.GetState = function() return enabled end
+
+			-- ===== ХОВЕР НА КАРТОЧКЕ =====
 			card.MouseEnter:Connect(function()
-				TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(28,28,36)}):Play()
-				TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size=UDim2.fromOffset(255,74)}):Play()
-				local stroke = card:FindFirstChildOfClass("UIStroke")
-				if stroke and not enabled then
-					TweenService:Create(stroke, TweenInfo.new(0.2), {Color=ThemeColor("C1"), Transparency=0.5}):Play()
+				Tween(card, 0.18, { BackgroundColor3 = Color3.fromRGB(26, 26, 34) })
+				Tween(card, 0.18, { Size = UDim2.fromOffset(255, 76) }, Enum.EasingStyle.Back)
+				if not enabled then
+					Tween(stroke, 0.18, { Color = TC("C1"), Transparency = 0.55 })
 				end
 			end)
 			card.MouseLeave:Connect(function()
-				TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(20,20,26), Size=UDim2.fromOffset(250,70)}):Play()
-				local stroke = card:FindFirstChildOfClass("UIStroke")
-				if stroke and not enabled then
-					TweenService:Create(stroke, TweenInfo.new(0.2), {Color=Color3.fromRGB(35,35,45), Transparency=0}):Play()
+				Tween(card, 0.18, { BackgroundColor3 = Color3.fromRGB(19, 19, 24), Size = UDim2.fromOffset(250, 72) })
+				if not enabled then
+					Tween(stroke, 0.18, { Color = Color3.fromRGB(34, 34, 44), Transparency = 0 })
 				end
 			end)
 
-			card.MouseButton1Click:Connect(function() setState(not enabled) end)
+			card.MouseButton1Click:Connect(function()
+				Set(not enabled)
+			end)
 
-			table.insert(Tab._Cards, {_Title=string.lower(title), _Card=card, _SetState=setState, _GetState=function() return enabled end})
-			return {SetState=setState, GetState=function() return enabled end}
+			return state
 		end
 
-		function Tab._Refresh()
-			for _,c in pairs(Tab._Cards) do
-				c._Card.Visible = Window.SearchText=="" or string.find(c._Title, Window.SearchText, 1, true) ~= nil
-			end
+		-----------------------------------------------------
+		-- ПАРАГРАФ (просто текст без тоггла)
+		-----------------------------------------------------
+		function Tab:AddParagraph(title, text)
+			local card = New("Frame", {
+				BackgroundColor3 = Color3.fromRGB(19, 19, 24), BorderSizePixel = 0,
+			}, page)
+			Round(card, 10)
+			New("UIStroke", { Color = Color3.fromRGB(34, 34, 44), Thickness = 1 }, card)
+
+			New("TextLabel", {
+				Size = UDim2.new(1, -24, 0, 22), Position = UDim2.fromOffset(12, 8),
+				BackgroundTransparency = 1, Text = title,
+				TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold,
+				TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left,
+			}, card)
+			New("TextLabel", {
+				Size = UDim2.new(1, -24, 0, 34), Position = UDim2.fromOffset(12, 32),
+				BackgroundTransparency = 1, Text = text or "",
+				TextColor3 = Color3.fromRGB(105, 105, 120), TextWrapped = true,
+				Font = Enum.Font.Gotham, TextSize = 11,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
+			}, card)
 		end
-
-		-- Переключение вкладок (с анимацией появления страницы)
-		btn.MouseButton1Click:Connect(function()
-			for _,t in pairs(Window.Tabs) do
-				t._Page.Visible = false
-				t._Btn.BackgroundColor3 = Color3.fromRGB(20,20,26)
-				for _,child in pairs(t._Btn:GetChildren()) do
-					if child:IsA("UIGradient") then child:Destroy() end
-				end
-				local l = t._Btn:FindFirstChildOfClass("TextLabel")
-				if l then l.TextColor3 = Color3.fromRGB(160,160,170) end
-			end
-			page.Visible = true
-			page.GroupTransparency = 0 -- если CanvasGroup; для ScrollingFrame просто alpha через позицию
-			page.Position = UDim2.fromOffset(15, 75)
-			TweenService:Create(page, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=UDim2.fromOffset(15,65)}):Play()
-
-			btn.BackgroundColor3 = Color3.new(1,1,1)
-			AnimatedGradient(btn, ThemeColor("C1"), ThemeColor("C2"))
-			label.TextColor3 = Color3.new(1,1,1)
-			PlaySweep(btn:FindFirstChildOfClass("UIGradient"))
-		end)
 
 		return Tab
 	end
 
-	--// ВКЛАДКА ТЕМ
-	local themesTab = Window:CreateTab("Themes", "paint-brush")
-	themesTab._Page:FindFirstChildOfClass("UIGridLayout").CellSize = UDim2.fromOffset(160,75)
+	---------------------------------------------------------
+	-- ВКЛАДКА ТЕМ (рабочая, применяется ко всему UI)
+	---------------------------------------------------------
+	function Window:SetupThemesTab()
+		local themesTab = self:CreateTab("Themes", "paint", true)
+		themesTab._IsThemes = true
+		themesTab._Grid.CellSize = UDim2.fromOffset(160, 78)
 
-	local selectedStroke
-	for i, theme in ipairs(Celestial.Themes) do
-		local card = Make("TextButton", {BackgroundColor3=Color3.new(1,1,1), Text="", AutoButtonColor=false}, themesTab._Page)
-		Corner(card, 10)
-		AnimatedGradient(card, HexToColor(theme.C1), HexToColor(theme.C2))
+		local selectedStroke = nil
 
-		Make("TextLabel", {
-			Size=UDim2.new(1,-10,0,22), Position=UDim2.fromOffset(8,6), BackgroundTransparency=1,
-			Text=theme.Name, TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
-			Font=Enum.Font.GothamBold, TextSize=13,
-		}, card)
-		Make("TextLabel", {
-			Size=UDim2.new(1,-10,0,30), Position=UDim2.fromOffset(8,28), BackgroundTransparency=1,
-			Text=theme.C1.."\n"..theme.C2, TextColor3=Color3.new(1,1,1), TextTransparency=0.25,
-			TextXAlignment=Enum.TextXAlignment.Left, Font=Enum.Font.Code, TextSize=10,
-		}, card)
-		local num = Make("TextLabel", {
-			Size=UDim2.fromOffset(22,22), Position=UDim2.new(1,-30,1,-30),
-			BackgroundColor3=Color3.new(1,1,1), BackgroundTransparency=0.2,
-			Text=tostring(i), TextColor3=Color3.new(0,0,0), Font=Enum.Font.GothamBold, TextSize=13,
-		}, card)
-		Corner(num, 6)
+		for i, theme in ipairs(Celestial.Themes) do
+			local card = New("TextButton", {
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				Text = "", AutoButtonColor = false, BorderSizePixel = 0,
+			}, themesTab._Page)
+			Round(card, 10)
+			local g = New("UIGradient", {
+				Color = ColorSequence.new(Hex(theme.C1), Hex(theme.C2)),
+				Rotation = 15,
+			}, card)
 
-		-- Ховер на теме: лёгкое увеличение
-		card.MouseEnter:Connect(function()
-			TweenService:Create(card, TweenInfo.new(0.15), {Size=UDim2.fromOffset(165,78)}):Play()
-		end)
-		card.MouseLeave:Connect(function()
-			TweenService:Create(card, TweenInfo.new(0.15), {Size=UDim2.fromOffset(160,75)}):Play()
-		end)
+			New("TextLabel", {
+				Size = UDim2.new(1, -12, 0, 20), Position = UDim2.fromOffset(9, 7),
+				BackgroundTransparency = 1, Text = theme.Name,
+				TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold,
+				TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			}, card)
+			New("TextLabel", {
+				Size = UDim2.new(1, -12, 0, 30), Position = UDim2.fromOffset(9, 27),
+				BackgroundTransparency = 1, Text = theme.C1 .. "\n" .. theme.C2,
+				TextColor3 = Color3.new(1, 1, 1), TextTransparency = 0.3,
+				Font = Enum.Font.Code, TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
+			}, card)
 
-		card.MouseButton1Click:Connect(function()
-			CurrentTheme = theme
-			if selectedStroke then selectedStroke:Destroy() end
-			selectedStroke = Make("UIStroke", {Color=Color3.new(1,1,1), Thickness=2.5}, card)
-			-- Мгновенно перекрашиваем всё под новую тему
-			for _,tab in pairs(Window.Tabs) do
-				for _,c in pairs(tab._Cards) do
-					if c._GetState() then c._SetState(true) end
+			local num = New("TextLabel", {
+				Size = UDim2.fromOffset(22, 22), AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.new(1, -8, 1, -8),
+				BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.25,
+				Text = tostring(i), TextColor3 = Color3.new(0, 0, 0),
+				Font = Enum.Font.GothamBold, TextSize = 12,
+			}, card)
+			Round(num, 7)
+
+			state = { Name = theme.Name, Card = card }
+			table.insert(themesTab._Cards, state)
+
+			-- ховер
+			card.MouseEnter:Connect(function()
+				Tween(card, 0.15, { Size = UDim2.fromOffset(164, 81) }, Enum.EasingStyle.Back)
+			end)
+			card.MouseLeave:Connect(function()
+				Tween(card, 0.15, { Size = UDim2.fromOffset(160, 78) })
+			end)
+
+			-- выбор темы
+			card.MouseButton1Click:Connect(function()
+				CurrentTheme = theme
+
+				if selectedStroke then selectedStroke:Destroy() end
+				selectedStroke = New("UIStroke", {
+					Color = Color3.new(1, 1, 1), Thickness = 2.5,
+				}, card)
+
+				ThemeChanged:Fire()
+
+				-- перекрашиваем активную кнопку вкладки
+				for _, t in pairs(AllTabs) do
+					if t._Active then
+						for _, c in pairs(t._Btn:GetChildren()) do
+							if c:IsA("UIGradient") then
+								c.Color = ColorSequence.new(TC("C1"), TC("C2"))
+							end
+						end
+					end
+					-- обновляем включённые карточки
+					for _, c in pairs(t._Cards) do
+						if c.SetState and c.GetState and c.GetState() then
+							c.SetState(true, true)
+						end
+					end
 				end
-				local g = tab._Btn:FindFirstChildOfClass("UIGradient")
-				if g then
-					TweenService:Create(g, TweenInfo.new(0.3), {
-						Color = ColorSequence.new(HexToColor(theme.C1), HexToColor(theme.C2))
-					}):Play()
-				end
+			end)
+
+			if i == 1 then
+				selectedStroke = New("UIStroke", { Color = Color3.new(1, 1, 1), Thickness = 2.5 }, card)
 			end
-		end)
-
-		if i==1 then selectedStroke = Make("UIStroke", {Color=Color3.new(1,1,1), Thickness=2.5}, card) end
+		end
 	end
 
+	-- Поиск в реальном времени
+	SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local q = string.lower(SearchBox.Text)
+		for _, t in pairs(AllTabs) do
+			t._Refresh(q)
+		end
+	end)
+
 	Window.Gui = gui
+	Window.Main = Main
+	Window:SetupThemesTab()
+
+	-- Автооткрытие первой основной вкладки
+	if AllTabs[1] then
+		AllTabs[1]._Btn:FindFirstChildOfClass("TextLabel").TextColor3 = Color3.fromRGB(165, 165, 180)
+	end
+
 	return Window
 end
 
