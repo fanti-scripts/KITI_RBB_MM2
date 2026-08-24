@@ -1,271 +1,401 @@
--- Celestial UI (точная копия стиля с картинки)
+--// Celestial UI Library v2 (анимации + иконки)
+local Celestial = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
-local Library = {}
-Library.Theme = {
-    Background = Color3.fromRGB(24, 24, 28),      -- основной фон
-    Sidebar   = Color3.fromRGB(20, 20, 24),       -- левая панель
-    Card      = Color3.fromRGB(34, 34, 40),       -- карточки
-    CardHover = Color3.fromRGB(42, 42, 50),
-    Accent    = Color3.fromRGB(0, 120, 255),      -- синий акцент
-    Text      = Color3.fromRGB(240, 240, 245),
-    TextDim   = Color3.fromRGB(130, 130, 140),
+--// ================= ИКОНКИ =================
+--// Имена из твоего файла UiIcons.txt -> rbxassetid (Lucide-иконки Roblox)
+local IconIds = {
+	["magnifying-glass"] = 10734973670,
+	["folder"]           = 10747384554,
+	["gear"]             = 10747385959,
+	["power"]            = 10747385619,
+	["sword"]            = 10747385527,
+	["person-running"]   = 10747385071,
+	["eye"]              = 10723407389,
+	["heart"]            = 10723406095,
+	["shield-check"]     = 10747384827,
+	["lightning-bolt"]   = 10747384679,
+	["crosshairs"]       = 10709768451,
+	["flame"]            = 10723399611,
+	["star"]             = 10723406277,
+	["paint-brush"]      = 10747384966,
+	["trash-can"]        = 10747385194,
+	["check"]            = 10723404435,
+	["x"]                = 10747384394,
+	["sun"]              = 11029858098,
+	["moon"]             = 10723405990,
 }
 
-local function Create(class, props, parent)
-    local obj = Instance.new(class)
-    for k, v in pairs(props) do obj[k] = v end
-    obj.Parent = parent
-    return obj
+local function GetIconId(name)
+	return IconIds[name] or IconIds["star"]
 end
 
-local function Tween(obj, t, props)
-    TweenService:Create(obj, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+--// Создаёт ImageLabel с иконкой по имени из файла
+local function MakeIcon(name, size, parent)
+	local img = Instance.new("ImageLabel")
+	img.Size = UDim2.fromOffset(size, size)
+	img.BackgroundTransparency = 1
+	img.Image = "rbxassetid://" .. GetIconId(name)
+	img.Parent = parent
+	return img
 end
 
-function Library:Window()
-    local Window = { Modules = {} }
+--// ================= ТЕМЫ =================
+Celestial.Themes = {
+	{Name="Фиолетово-голубой", C1="#5e33ff", C2="#00cfff"},
+	{Name="Конфетный",         C1="#ffc00f", C2="#f00bd6"},
+	{Name="Сиреневый",         C1="#fc8a2c", C2="#ff95b8"},
+	{Name="Мятно-малиновый",   C1="#0fabbc", C2="#fc354c"},
+	{Name="Супермен",          C1="#0099f7", C2="#f11712"},
+	{Name="Рубиновый",         C1="#e01f5f", C2="#9b111e"},
+	{Name="Космос",            C1="#c33764", C2="#1d2671"},
+	{Name="Аметистово-желтый", C1="#8e43ed", C2="#f5c9cb"},
+	{Name="Персиковый",        C1="#ffcb54", C2="#ff7e67"},
+	{Name="Лавандовый",        C1="#b57edc", C2="#f750c0"},
+	{Name="Лунада",            C1="#5e33ff", C2="#a5febc"},
+	{Name="Пурпурно-морской",  C1="#3603c3", C2="#2ebf91"},
+	{Name="Солнечный закат",   C1="#ff5e00", C2="#ffa500"},
+	{Name="Оранжево-розовый",  C1="#ff6347", C2="#ff69b4"},
+	{Name="Черника",           C1="#2929dd", C2="#5a5a7a"},
+	{Name="Экзалитповый",      C1="#44d7a8", C2="#006442"},
+	{Name="Мятный шоколад",    C1="#98fb98", C2="#006400"},
+	{Name="Малиновый смузи",   C1="#fbc61e", C2="#f91a93"},
+	{Name="Обморожение",       C1="#00ffff", C2="#003333"},
+	{Name="Холодная ягода",    C1="#d5ccea", C2="#490fa0"},
+	{Name="Грозовое море",     C1="#4158d0", C2="#f15151"},
+}
 
-    local ScreenGui = Create("ScreenGui", {Name = "Celestial", ResetOnSpawn = false}, game.CoreGui)
-
-    local Main = Create("Frame", {
-        Size = UDim2.new(0, 620, 0, 400),
-        Position = UDim2.new(0.5, -310, 0.5, -200),
-        BackgroundColor3 = Library.Theme.Background,
-        BorderSizePixel = 0,
-        Active = true,
-    }, ScreenGui)
-    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, Main)
-
-    -- ============ ЛЕВАЯ ПАНЕЛЬ ============
-    local Sidebar = Create("Frame", {
-        Size = UDim2.new(0, 150, 1, 0),
-        BackgroundColor3 = Library.Theme.Sidebar,
-        BorderSizePixel = 0,
-    }, Main)
-    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, Sidebar)
-
-    -- Логотип
-    local Logo = Create("Frame", {
-        Size = UDim2.new(0, 26, 0, 26),
-        Position = UDim2.new(0, 12, 0, 12),
-        BackgroundColor3 = Library.Theme.Accent,
-    }, Sidebar)
-    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, Logo)
-    Create("TextLabel", {
-        Size = UDim2.new(0, 100, 0, 26),
-        Position = UDim2.new(0, 44, 0, 12),
-        BackgroundTransparency = 1,
-        Text = "Celestial",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Font = Enum.Font.GothamBold,
-        TextSize = 16,
-        TextColor3 = Library.Theme.Text,
-    }, Sidebar)
-
-    local TabHolder = Create("Frame", {
-        Size = UDim2.new(1, -16, 0, 300),
-        Position = UDim2.new(0, 8, 0, 50),
-        BackgroundTransparency = 1,
-    }, Sidebar)
-    Create("UIListLayout", {Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder}, TabHolder)
-
-    local Content = Create("Frame", {
-        Size = UDim2.new(1, -166, 1, -50),
-        Position = UDim2.new(0, 158, 0, 50),
-        BackgroundTransparency = 1,
-    }, Main)
-
-    local Tabs, CurrentTab = {}, nil
-
-    -- ============ ВКЛАДКА ============
-    function Window:Tab(icon, name)
-        local Tab = {}
-
-        local Btn = Create("TextButton", {
-            Size = UDim2.new(1, 0, 0, 34),
-            BackgroundColor3 = Library.Theme.Accent,
-            BackgroundTransparency = 1,
-            Text = "   " .. icon .. "  " .. name,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Font = Enum.Font.GothamMedium,
-            TextSize = 13,
-            TextColor3 = Library.Theme.TextDim,
-            AutoButtonColor = false,
-        }, TabHolder)
-        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Btn)
-
-        -- Заголовок категории
-        Create("TextLabel", {
-            Size = UDim2.new(1, 0, 0, 20),
-            BackgroundTransparency = 1,
-            Text = "Основное",
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Font = Enum.Font.GothamMedium,
-            TextSize = 12,
-            TextColor3 = Library.Theme.TextDim,
-        }, Content)
-
-        -- Поиск (только на первой вкладке, но можно всем)
-        local Grid = Create("ScrollingFrame", {
-            Size = UDim2.new(1, 0, 1, -24),
-            Position = UDim2.new(0, 0, 0, 24),
-            BackgroundTransparency = 1,
-            ScrollBarThickness = 3,
-            ScrollBarImageColor3 = Library.Theme.Accent,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-        }, Content)
-        Create("UIGridLayout", {
-            CellSize = UDim2.new(0.5, -5, 0, 56),
-            CellPadding = UDim2.new(0, 8, 0, 8),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-        }, Grid)
-
-        local function Select()
-            if CurrentTab then
-                CurrentTab.Page.Visible = false
-                Tween(CurrentTab.Btn, 0.15, {BackgroundTransparency = 1, TextColor3 = Library.Theme.TextDim})
-            end
-            Tab.Page.Visible = true
-            Tween(Btn, 0.15, {BackgroundTransparency = 0, TextColor3 = Library.Theme.Text})
-            CurrentTab = Tab
-        end
-        Btn.MouseButton1Click:Connect(Select)
-
-        Tabs[#Tabs+1] = {Btn = Btn, Page = Grid}
-        if not CurrentTab then Select() end
-
-        -- ============ КАРТОЧКА ФУНКЦИИ (как на картинке) ============
-        function Tab:Module(name, description, default, callback)
-            local state = default or false
-
-            local Card = Create("TextButton", {
-                BackgroundColor3 = Library.Theme.Card,
-                Text = "",
-                AutoButtonColor = false,
-            }, Grid)
-            Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Card)
-
-            -- Чекбокс (синий квадратик слева, как на скрине)
-            local Checkbox = Create("Frame", {
-                Size = UDim2.new(0, 16, 0, 16),
-                Position = UDim2.new(0, 10, 0, 10),
-                BackgroundColor3 = state and Library.Theme.Accent or Color3.fromRGB(50, 50, 58),
-            }, Card)
-            Create("UICorner", {CornerRadius = UDim.new(0, 4)}, Checkbox)
-            local Check = Create("TextLabel", {
-                Size = UDim2.new(1, 0, 1, 0),
-                BackgroundTransparency = 1,
-                Text = "✓",
-                Font = Enum.Font.GothamBold,
-                TextSize = 12,
-                TextColor3 = Color3.fromRGB(255, 255, 255),
-                Visible = state,
-            }, Checkbox)
-
-            -- Название
-            Create("TextLabel", {
-                Size = UDim2.new(1, -60, 0, 16),
-                Position = UDim2.new(0, 34, 0, 8),
-                BackgroundTransparency = 1,
-                Text = name,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Font = Enum.Font.GothamBold,
-                TextSize = 13,
-                TextColor3 = Library.Theme.Text,
-            }, Card)
-
-            -- Описание (серым, мелко)
-            local Desc = Create("TextLabel", {
-                Size = UDim2.new(1, -60, 0, 26),
-                Position = UDim2.new(0, 34, 0, 25),
-                BackgroundTransparency = 1,
-                Text = description,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                TextYAlignment = Enum.TextYAlignment.Top,
-                TextWrapped = true,
-                Font = Enum.Font.Gotham,
-                TextSize = 10,
-                TextColor3 = Library.Theme.TextDim,
-            }, Card)
-
-            -- Шестерёнка ⚙️ справа сверху
-            local Gear = Create("TextButton", {
-                Size = UDim2.new(0, 22, 0, 22),
-                Position = UDim2.new(1, -28, 0, 8),
-                BackgroundTransparency = 1,
-                Text = "⚙️",
-                TextSize = 13,
-            }, Card)
-            Gear.MouseButton1Click:Connect(function()
-                print("[Celestial] Настройки: " .. name)
-            end)
-
-            -- Клик по карточке = вкл/выкл
-            Card.MouseButton1Click:Connect(function()
-                state = not state
-                Tween(Checkbox, 0.15, {BackgroundColor3 = state and Library.Theme.Accent or Color3.fromRGB(50, 50, 58)})
-                Check.Visible = state
-                callback and callback(state)
-            end)
-            Card.MouseEnter:Connect(function() Tween(Card, 0.1, {BackgroundColor3 = Library.Theme.CardHover}) end)
-            Card.MouseLeave:Connect(function() Tween(Card, 0.1, {BackgroundColor3 = Library.Theme.Card}) end)
-
-            Window.Modules[name] = {
-                Get = function() return state end,
-                Set = function(v)
-                    state = v
-                    Checkbox.BackgroundColor3 = v and Library.Theme.Accent or Color3.fromRGB(50, 50, 58)
-                    Check.Visible = v
-                end,
-            }
-        end
-
-        return Tab
-    end
-
-    -- Кнопка "Выйти" внизу панели
-    local Exit = Create("TextButton", {
-        Size = UDim2.new(1, -16, 0, 30),
-        Position = UDim2.new(0, 8, 1, -38),
-        BackgroundTransparency = 1,
-        Text = "⬅  Выйти",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 13,
-        TextColor3 = Library.Theme.TextDim,
-    }, Sidebar)
-    Exit.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
-
-    -- Перетаскивание
-    do
-        local dragging, dragStart, startPos = false, nil, nil
-        Main.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging, dragStart, startPos = true, input.Position, Main.Position
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local d = input.Position - dragStart
-                Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-        end)
-    end
-
-    -- Показ/скрытие по Right Shift
-    UserInputService.InputBegan:Connect(function(input, gp)
-        if not gp and input.KeyCode == Enum.KeyCode.RightShift then
-            ScreenGui.Enabled = not ScreenGui.Enabled
-        end
-    end)
-
-    return Window
+local function HexToColor(hex)
+	hex = hex:gsub("#","")
+	return Color3.fromRGB(tonumber(hex:sub(1,2),16), tonumber(hex:sub(3,4),16), tonumber(hex:sub(5,6),16))
 end
 
-return Library
+local CurrentTheme = Celestial.Themes[1]
+local function ThemeColor(which) return HexToColor(CurrentTheme[which]) end
+
+local function Make(class, props, parent)
+	local inst = Instance.new(class)
+	for k,v in pairs(props) do inst[k] = v end
+	inst.Parent = parent
+	return inst
+end
+local function Corner(o,r) Make("UICorner",{CornerRadius=UDim.new(0,r or 10)},o) end
+
+--// Плавный градиент с "бегущим" эффектом (для ховера)
+local function AnimatedGradient(obj, c1, c2, rot)
+	local g = Make("UIGradient", {
+		Color = ColorSequence.new(c1, c2),
+		Rotation = rot or 15,
+		Offset = Vector2.new(-1, 0),
+	}, obj)
+	return g
+end
+
+--// Анимация "пробегающего" блика по кнопке
+local function PlaySweep(gradient)
+	if not gradient then return end
+	local t = TweenService:Create(gradient, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Offset = Vector2.new(1, 0)})
+	t:Play()
+	task.delay(0.55, function() gradient.Offset = Vector2.new(-1, 0) end)
+end
+
+--// ================= ОКНО =================
+function Celestial:CreateWindow(config)
+	config = config or {}
+	local gui = Make("ScreenGui", {Name="CelestialUI", ResetOnSpawn=false},
+		(config.Parent or game:GetService("CoreGui")))
+
+	local Main = Make("Frame", {
+		Size = UDim2.fromOffset(735, 600),
+		Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(13,13,16), Active = true,
+	}, gui)
+	Corner(Main, 12)
+	Make("UIStroke", {Color=Color3.fromRGB(40,40,50), Thickness=1}, Main)
+
+	-- Перетаскивание
+	do
+		local dragging, dragStart, startPos
+		Main.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging=true dragStart=i.Position startPos=Main.Position end
+		end)
+		UserInputService.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=false end
+		end)
+		UserInputService.InputChanged:Connect(function(i)
+			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+				local d = i.Position - dragStart
+				Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X, startPos.Y.Scale, startPos.Y.Offset+d.Y)
+			end
+		end)
+	end
+
+	--// САЙДБАР
+	local Sidebar = Make("Frame", {Size=UDim2.new(0,200,1,0), BackgroundColor3=Color3.fromRGB(10,10,13)}, Main)
+	Corner(Sidebar, 12)
+
+	local Avatar = Make("ImageLabel", {
+		Size=UDim2.fromOffset(40,40), Position=UDim2.fromOffset(15,15),
+		Image=Players:GetUserThumbnailAsync(Players.LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100),
+	}, Sidebar)
+	Corner(Avatar, 8)
+
+	Make("TextLabel", {
+		Size=UDim2.new(1,-65,0,40), Position=UDim2.fromOffset(65,15), BackgroundTransparency=1,
+		Text="Celestial", TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
+		Font=Enum.Font.GothamBold, TextSize=22,
+	}, Sidebar)
+
+	Make("TextLabel", {
+		Size=UDim2.new(1,-20,0,20), Position=UDim2.fromOffset(15,70), BackgroundTransparency=1,
+		Text="Основные", TextColor3=Color3.fromRGB(120,120,130), TextXAlignment=Enum.TextXAlignment.Left,
+		Font=Enum.Font.Gotham, TextSize=13,
+	}, Sidebar)
+
+	local TabButtons = Make("Frame", {Size=UDim2.new(1,-20,0,300), Position=UDim2.fromOffset(10,95), BackgroundTransparency=1}, Sidebar)
+	Make("UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder}, TabButtons)
+
+	-- Кнопка Выйти (с иконкой и ховер-эффектом)
+	local ExitBtn = Make("TextButton", {
+		Size=UDim2.new(1,-20,0,40), Position=UDim2.new(1,-10,1,-50), AnchorPoint=Vector2.new(0,1),
+		BackgroundTransparency=1, Text="", AutoButtonColor=false,
+	}, Sidebar)
+	MakeIcon("power", 20, ExitBtn).Position = UDim2.fromOffset(12,10)
+	Make("TextLabel", {
+		Size=UDim2.new(1,-50,1,0), Position=UDim2.fromOffset(42,0), BackgroundTransparency=1,
+		Text="Выйти", TextColor3=Color3.fromRGB(200,200,210), TextXAlignment=Enum.TextXAlignment.Left,
+		Font=Enum.Font.GothamBold, TextSize=16,
+	}, ExitBtn)
+	ExitBtn.MouseEnter:Connect(function()
+		TweenService:Create(ExitBtn, TweenInfo.new(0.2), {BackgroundTransparency=0.85, BackgroundColor3=Color3.fromRGB(255,60,60)}):Play()
+	end)
+	ExitBtn.MouseLeave:Connect(function()
+		TweenService:Create(ExitBtn, TweenInfo.new(0.2), {BackgroundTransparency=1}):Play()
+	end)
+	ExitBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+	--// КОНТЕНТ
+	local Content = Make("Frame", {Size=UDim2.new(1,-200,1,0), Position=UDim2.fromOffset(200,0), BackgroundTransparency=1}, Main)
+
+	local SearchBox = Make("TextBox", {
+		Size=UDim2.new(1,-110,0,40), Position=UDim2.fromOffset(15,15),
+		BackgroundColor3=Color3.fromRGB(20,20,26), PlaceholderText="Поиск",
+		Text="", TextColor3=Color3.new(1,1,1), PlaceholderColor3=Color3.fromRGB(110,110,120),
+		Font=Enum.Font.Gotham, TextSize=15, TextXAlignment=Enum.TextXAlignment.Left, ClearTextOnFocus=false,
+	}, Content)
+	Make("UIPadding", {PaddingLeft=UDim.new(0,35)}, SearchBox)
+	Corner(SearchBox, 10)
+	MakeIcon("magnifying-glass", 18, SearchBox).Position = UDim2.fromOffset(12,11)
+
+	local Window = {Tabs={}, SearchText=""}
+	SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		Window.SearchText = string.lower(SearchBox.Text)
+		for _,tab in pairs(Window.Tabs) do if tab._Refresh then tab._Refresh() end end
+	end)
+
+	--// ВКЛАДКА
+	function Window:CreateTab(name, iconName)
+		local btn = Make("TextButton", {
+			Size=UDim2.new(1,0,0,40), BackgroundColor3=Color3.fromRGB(20,20,26),
+			Text="", AutoButtonColor=false,
+		}, TabButtons)
+		Corner(btn, 10)
+
+		local icon = MakeIcon(iconName or "star", 22, btn)
+		icon.Position = UDim2.fromOffset(12, 9)
+
+		local label = Make("TextLabel", {
+			Size=UDim2.new(1,-50,1,0), Position=UDim2.fromOffset(44,0), BackgroundTransparency=1,
+			Text=name, TextColor3=Color3.fromRGB(160,160,170), Font=Enum.Font.GothamBold,
+			TextSize=16, TextXAlignment=Enum.TextXAlignment.Left,
+		}, btn)
+
+		local page = Make("ScrollingFrame", {
+			Size=UDim2.new(1,-30,1,-75), Position=UDim2.fromOffset(15,65),
+			BackgroundTransparency=1, BorderSizePixel=0, CanvasSize=UDim2.new(),
+			ScrollBarThickness=4, ScrollBarImageColor3=Color3.fromRGB(60,60,70), Visible=false,
+		}, Content)
+		Make("UIGridLayout", {CellSize=UDim2.fromOffset(250,70), CellPadding=UDim2.fromOffset(10,10), SortOrder=Enum.SortOrder.LayoutOrder}, page)
+
+		local Tab = {_Btn=btn, _Page=page, _Cards={}}
+		table.insert(Window.Tabs, Tab)
+
+		-- ===== ХОВЕР-ЭФФЕКТ НА КНОПКЕ РАЗДЕЛА =====
+		local hoverGrad -- бегущий блик
+		btn.MouseEnter:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3=Color3.fromRGB(30,30,38)}):Play()
+			TweenService:Create(icon, TweenInfo.new(0.25), {ImageColor3=ThemeColor("C1")}):Play()
+			hoverGrad = AnimatedGradient(btn, ThemeColor("C1"), ThemeColor("C2"), 0)
+			hoverGrad.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.75), NumberSequenceKeypoint.new(1, 1)
+			})
+			PlaySweep(hoverGrad)
+		end)
+		btn.MouseLeave:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3=Color3.fromRGB(20,20,26)}):Play()
+			TweenService:Create(icon, TweenInfo.new(0.25), {ImageColor3=Color3.new(1,1,1)}):Play()
+		end)
+
+		-- Карточка функции
+		function Tab:AddCard(title, description, callback, iconName)
+			local card = Make("TextButton", {
+				BackgroundColor3=Color3.fromRGB(20,20,26), Text="", AutoButtonColor=false,
+			}, page)
+			Corner(card, 10)
+			Make("UIStroke", {Color=Color3.fromRGB(35,35,45), Thickness=1}, card)
+
+			local enabled = false
+			local glow = Make("Frame", {Size=UDim2.new(1,0,1,0), Visible=false, ZIndex=0}, card)
+			Corner(glow, 10)
+
+			local icon = MakeIcon(iconName or "star", 20, card)
+			icon.Position = UDim2.new(1,-32,0,8)
+
+			Make("TextLabel", {
+				Size=UDim2.new(1,-64,0,24), Position=UDim2.fromOffset(12,6), BackgroundTransparency=1,
+				Text=title, TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
+				Font=Enum.Font.GothamBold, TextSize=16,
+			}, card)
+			Make("TextLabel", {
+				Size=UDim2.new(1,-24,0,34), Position=UDim2.fromOffset(12,30), BackgroundTransparency=1,
+				Text=description or "", TextColor3=Color3.fromRGB(110,110,120), TextWrapped=true,
+				TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextXAlignment.Top,
+				Font=Enum.Font.Gotham, TextSize=12,
+			}, card)
+
+			local function setState(state)
+				enabled = state
+				glow.Visible = state
+				glow:ClearAllChildren()
+				if state then
+					Corner(glow, 10)
+					AnimatedGradient(glow, ThemeColor("C1"), ThemeColor("C2"))
+					Make("UIStroke", {Color=ThemeColor("C1"), Thickness=1.5}, card)
+					-- пульс карточки при включении
+					card.Size = UDim2.fromOffset(250, 66)
+					TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Back), {Size=UDim2.fromOffset(250,70)}):Play()
+				else
+					local s = card:FindFirstChildOfClass("UIStroke")
+					if s then s.Color = Color3.fromRGB(35,35,45); s.Thickness = 1 end
+				end
+				if callback then callback(state) end
+			end
+
+			-- ===== ХОВЕР-ЭФФЕКТ НА КАРТОЧКЕ =====
+			card.MouseEnter:Connect(function()
+				TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(28,28,36)}):Play()
+				TweenService:Create(card, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size=UDim2.fromOffset(255,74)}):Play()
+				local stroke = card:FindFirstChildOfClass("UIStroke")
+				if stroke and not enabled then
+					TweenService:Create(stroke, TweenInfo.new(0.2), {Color=ThemeColor("C1"), Transparency=0.5}):Play()
+				end
+			end)
+			card.MouseLeave:Connect(function()
+				TweenService:Create(card, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(20,20,26), Size=UDim2.fromOffset(250,70)}):Play()
+				local stroke = card:FindFirstChildOfClass("UIStroke")
+				if stroke and not enabled then
+					TweenService:Create(stroke, TweenInfo.new(0.2), {Color=Color3.fromRGB(35,35,45), Transparency=0}):Play()
+				end
+			end)
+
+			card.MouseButton1Click:Connect(function() setState(not enabled) end)
+
+			table.insert(Tab._Cards, {_Title=string.lower(title), _Card=card, _SetState=setState, _GetState=function() return enabled end})
+			return {SetState=setState, GetState=function() return enabled end}
+		end
+
+		function Tab._Refresh()
+			for _,c in pairs(Tab._Cards) do
+				c._Card.Visible = Window.SearchText=="" or string.find(c._Title, Window.SearchText, 1, true) ~= nil
+			end
+		end
+
+		-- Переключение вкладок (с анимацией появления страницы)
+		btn.MouseButton1Click:Connect(function()
+			for _,t in pairs(Window.Tabs) do
+				t._Page.Visible = false
+				t._Btn.BackgroundColor3 = Color3.fromRGB(20,20,26)
+				for _,child in pairs(t._Btn:GetChildren()) do
+					if child:IsA("UIGradient") then child:Destroy() end
+				end
+				local l = t._Btn:FindFirstChildOfClass("TextLabel")
+				if l then l.TextColor3 = Color3.fromRGB(160,160,170) end
+			end
+			page.Visible = true
+			page.GroupTransparency = 0 -- если CanvasGroup; для ScrollingFrame просто alpha через позицию
+			page.Position = UDim2.fromOffset(15, 75)
+			TweenService:Create(page, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=UDim2.fromOffset(15,65)}):Play()
+
+			btn.BackgroundColor3 = Color3.new(1,1,1)
+			AnimatedGradient(btn, ThemeColor("C1"), ThemeColor("C2"))
+			label.TextColor3 = Color3.new(1,1,1)
+			PlaySweep(btn:FindFirstChildOfClass("UIGradient"))
+		end)
+
+		return Tab
+	end
+
+	--// ВКЛАДКА ТЕМ
+	local themesTab = Window:CreateTab("Themes", "paint-brush")
+	themesTab._Page:FindFirstChildOfClass("UIGridLayout").CellSize = UDim2.fromOffset(160,75)
+
+	local selectedStroke
+	for i, theme in ipairs(Celestial.Themes) do
+		local card = Make("TextButton", {BackgroundColor3=Color3.new(1,1,1), Text="", AutoButtonColor=false}, themesTab._Page)
+		Corner(card, 10)
+		AnimatedGradient(card, HexToColor(theme.C1), HexToColor(theme.C2))
+
+		Make("TextLabel", {
+			Size=UDim2.new(1,-10,0,22), Position=UDim2.fromOffset(8,6), BackgroundTransparency=1,
+			Text=theme.Name, TextColor3=Color3.new(1,1,1), TextXAlignment=Enum.TextXAlignment.Left,
+			Font=Enum.Font.GothamBold, TextSize=13,
+		}, card)
+		Make("TextLabel", {
+			Size=UDim2.new(1,-10,0,30), Position=UDim2.fromOffset(8,28), BackgroundTransparency=1,
+			Text=theme.C1.."\n"..theme.C2, TextColor3=Color3.new(1,1,1), TextTransparency=0.25,
+			TextXAlignment=Enum.TextXAlignment.Left, Font=Enum.Font.Code, TextSize=10,
+		}, card)
+		local num = Make("TextLabel", {
+			Size=UDim2.fromOffset(22,22), Position=UDim2.new(1,-30,1,-30),
+			BackgroundColor3=Color3.new(1,1,1), BackgroundTransparency=0.2,
+			Text=tostring(i), TextColor3=Color3.new(0,0,0), Font=Enum.Font.GothamBold, TextSize=13,
+		}, card)
+		Corner(num, 6)
+
+		-- Ховер на теме: лёгкое увеличение
+		card.MouseEnter:Connect(function()
+			TweenService:Create(card, TweenInfo.new(0.15), {Size=UDim2.fromOffset(165,78)}):Play()
+		end)
+		card.MouseLeave:Connect(function()
+			TweenService:Create(card, TweenInfo.new(0.15), {Size=UDim2.fromOffset(160,75)}):Play()
+		end)
+
+		card.MouseButton1Click:Connect(function()
+			CurrentTheme = theme
+			if selectedStroke then selectedStroke:Destroy() end
+			selectedStroke = Make("UIStroke", {Color=Color3.new(1,1,1), Thickness=2.5}, card)
+			-- Мгновенно перекрашиваем всё под новую тему
+			for _,tab in pairs(Window.Tabs) do
+				for _,c in pairs(tab._Cards) do
+					if c._GetState() then c._SetState(true) end
+				end
+				local g = tab._Btn:FindFirstChildOfClass("UIGradient")
+				if g then
+					TweenService:Create(g, TweenInfo.new(0.3), {
+						Color = ColorSequence.new(HexToColor(theme.C1), HexToColor(theme.C2))
+					}):Play()
+				end
+			end
+		end)
+
+		if i==1 then selectedStroke = Make("UIStroke", {Color=Color3.new(1,1,1), Thickness=2.5}, card) end
+	end
+
+	Window.Gui = gui
+	return Window
+end
+
+return Celestial
