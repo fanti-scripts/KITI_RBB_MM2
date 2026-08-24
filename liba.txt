@@ -1,0 +1,271 @@
+-- Celestial UI (точная копия стиля с картинки)
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local Library = {}
+Library.Theme = {
+    Background = Color3.fromRGB(24, 24, 28),      -- основной фон
+    Sidebar   = Color3.fromRGB(20, 20, 24),       -- левая панель
+    Card      = Color3.fromRGB(34, 34, 40),       -- карточки
+    CardHover = Color3.fromRGB(42, 42, 50),
+    Accent    = Color3.fromRGB(0, 120, 255),      -- синий акцент
+    Text      = Color3.fromRGB(240, 240, 245),
+    TextDim   = Color3.fromRGB(130, 130, 140),
+}
+
+local function Create(class, props, parent)
+    local obj = Instance.new(class)
+    for k, v in pairs(props) do obj[k] = v end
+    obj.Parent = parent
+    return obj
+end
+
+local function Tween(obj, t, props)
+    TweenService:Create(obj, TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+end
+
+function Library:Window()
+    local Window = { Modules = {} }
+
+    local ScreenGui = Create("ScreenGui", {Name = "Celestial", ResetOnSpawn = false}, game.CoreGui)
+
+    local Main = Create("Frame", {
+        Size = UDim2.new(0, 620, 0, 400),
+        Position = UDim2.new(0.5, -310, 0.5, -200),
+        BackgroundColor3 = Library.Theme.Background,
+        BorderSizePixel = 0,
+        Active = true,
+    }, ScreenGui)
+    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, Main)
+
+    -- ============ ЛЕВАЯ ПАНЕЛЬ ============
+    local Sidebar = Create("Frame", {
+        Size = UDim2.new(0, 150, 1, 0),
+        BackgroundColor3 = Library.Theme.Sidebar,
+        BorderSizePixel = 0,
+    }, Main)
+    Create("UICorner", {CornerRadius = UDim.new(0, 10)}, Sidebar)
+
+    -- Логотип
+    local Logo = Create("Frame", {
+        Size = UDim2.new(0, 26, 0, 26),
+        Position = UDim2.new(0, 12, 0, 12),
+        BackgroundColor3 = Library.Theme.Accent,
+    }, Sidebar)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, Logo)
+    Create("TextLabel", {
+        Size = UDim2.new(0, 100, 0, 26),
+        Position = UDim2.new(0, 44, 0, 12),
+        BackgroundTransparency = 1,
+        Text = "Celestial",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        TextColor3 = Library.Theme.Text,
+    }, Sidebar)
+
+    local TabHolder = Create("Frame", {
+        Size = UDim2.new(1, -16, 0, 300),
+        Position = UDim2.new(0, 8, 0, 50),
+        BackgroundTransparency = 1,
+    }, Sidebar)
+    Create("UIListLayout", {Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder}, TabHolder)
+
+    local Content = Create("Frame", {
+        Size = UDim2.new(1, -166, 1, -50),
+        Position = UDim2.new(0, 158, 0, 50),
+        BackgroundTransparency = 1,
+    }, Main)
+
+    local Tabs, CurrentTab = {}, nil
+
+    -- ============ ВКЛАДКА ============
+    function Window:Tab(icon, name)
+        local Tab = {}
+
+        local Btn = Create("TextButton", {
+            Size = UDim2.new(1, 0, 0, 34),
+            BackgroundColor3 = Library.Theme.Accent,
+            BackgroundTransparency = 1,
+            Text = "   " .. icon .. "  " .. name,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.GothamMedium,
+            TextSize = 13,
+            TextColor3 = Library.Theme.TextDim,
+            AutoButtonColor = false,
+        }, TabHolder)
+        Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Btn)
+
+        -- Заголовок категории
+        Create("TextLabel", {
+            Size = UDim2.new(1, 0, 0, 20),
+            BackgroundTransparency = 1,
+            Text = "Основное",
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.GothamMedium,
+            TextSize = 12,
+            TextColor3 = Library.Theme.TextDim,
+        }, Content)
+
+        -- Поиск (только на первой вкладке, но можно всем)
+        local Grid = Create("ScrollingFrame", {
+            Size = UDim2.new(1, 0, 1, -24),
+            Position = UDim2.new(0, 0, 0, 24),
+            BackgroundTransparency = 1,
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Library.Theme.Accent,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+        }, Content)
+        Create("UIGridLayout", {
+            CellSize = UDim2.new(0.5, -5, 0, 56),
+            CellPadding = UDim2.new(0, 8, 0, 8),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+        }, Grid)
+
+        local function Select()
+            if CurrentTab then
+                CurrentTab.Page.Visible = false
+                Tween(CurrentTab.Btn, 0.15, {BackgroundTransparency = 1, TextColor3 = Library.Theme.TextDim})
+            end
+            Tab.Page.Visible = true
+            Tween(Btn, 0.15, {BackgroundTransparency = 0, TextColor3 = Library.Theme.Text})
+            CurrentTab = Tab
+        end
+        Btn.MouseButton1Click:Connect(Select)
+
+        Tabs[#Tabs+1] = {Btn = Btn, Page = Grid}
+        if not CurrentTab then Select() end
+
+        -- ============ КАРТОЧКА ФУНКЦИИ (как на картинке) ============
+        function Tab:Module(name, description, default, callback)
+            local state = default or false
+
+            local Card = Create("TextButton", {
+                BackgroundColor3 = Library.Theme.Card,
+                Text = "",
+                AutoButtonColor = false,
+            }, Grid)
+            Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Card)
+
+            -- Чекбокс (синий квадратик слева, как на скрине)
+            local Checkbox = Create("Frame", {
+                Size = UDim2.new(0, 16, 0, 16),
+                Position = UDim2.new(0, 10, 0, 10),
+                BackgroundColor3 = state and Library.Theme.Accent or Color3.fromRGB(50, 50, 58),
+            }, Card)
+            Create("UICorner", {CornerRadius = UDim.new(0, 4)}, Checkbox)
+            local Check = Create("TextLabel", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = "✓",
+                Font = Enum.Font.GothamBold,
+                TextSize = 12,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Visible = state,
+            }, Checkbox)
+
+            -- Название
+            Create("TextLabel", {
+                Size = UDim2.new(1, -60, 0, 16),
+                Position = UDim2.new(0, 34, 0, 8),
+                BackgroundTransparency = 1,
+                Text = name,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.GothamBold,
+                TextSize = 13,
+                TextColor3 = Library.Theme.Text,
+            }, Card)
+
+            -- Описание (серым, мелко)
+            local Desc = Create("TextLabel", {
+                Size = UDim2.new(1, -60, 0, 26),
+                Position = UDim2.new(0, 34, 0, 25),
+                BackgroundTransparency = 1,
+                Text = description,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top,
+                TextWrapped = true,
+                Font = Enum.Font.Gotham,
+                TextSize = 10,
+                TextColor3 = Library.Theme.TextDim,
+            }, Card)
+
+            -- Шестерёнка ⚙️ справа сверху
+            local Gear = Create("TextButton", {
+                Size = UDim2.new(0, 22, 0, 22),
+                Position = UDim2.new(1, -28, 0, 8),
+                BackgroundTransparency = 1,
+                Text = "⚙️",
+                TextSize = 13,
+            }, Card)
+            Gear.MouseButton1Click:Connect(function()
+                print("[Celestial] Настройки: " .. name)
+            end)
+
+            -- Клик по карточке = вкл/выкл
+            Card.MouseButton1Click:Connect(function()
+                state = not state
+                Tween(Checkbox, 0.15, {BackgroundColor3 = state and Library.Theme.Accent or Color3.fromRGB(50, 50, 58)})
+                Check.Visible = state
+                callback and callback(state)
+            end)
+            Card.MouseEnter:Connect(function() Tween(Card, 0.1, {BackgroundColor3 = Library.Theme.CardHover}) end)
+            Card.MouseLeave:Connect(function() Tween(Card, 0.1, {BackgroundColor3 = Library.Theme.Card}) end)
+
+            Window.Modules[name] = {
+                Get = function() return state end,
+                Set = function(v)
+                    state = v
+                    Checkbox.BackgroundColor3 = v and Library.Theme.Accent or Color3.fromRGB(50, 50, 58)
+                    Check.Visible = v
+                end,
+            }
+        end
+
+        return Tab
+    end
+
+    -- Кнопка "Выйти" внизу панели
+    local Exit = Create("TextButton", {
+        Size = UDim2.new(1, -16, 0, 30),
+        Position = UDim2.new(0, 8, 1, -38),
+        BackgroundTransparency = 1,
+        Text = "⬅  Выйти",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamMedium,
+        TextSize = 13,
+        TextColor3 = Library.Theme.TextDim,
+    }, Sidebar)
+    Exit.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+    -- Перетаскивание
+    do
+        local dragging, dragStart, startPos = false, nil, nil
+        Main.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging, dragStart, startPos = true, input.Position, Main.Position
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local d = input.Position - dragStart
+                Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+        end)
+    end
+
+    -- Показ/скрытие по Right Shift
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if not gp and input.KeyCode == Enum.KeyCode.RightShift then
+            ScreenGui.Enabled = not ScreenGui.Enabled
+        end
+    end)
+
+    return Window
+end
+
+return Library
